@@ -3,11 +3,11 @@
     setHeader($d);
 ?>
 
-<div class="login-container min-vh-100 d-flex align-items-center">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-5">
-                <div class="card shadow">
+<div class="login-container w-100 vh-100 d-flex align-items-center overflow-hidden" style="background-color: #ebe2d8;">
+    <div class="container-fluid px-4">
+        <div class="row justify-content-center mb-5">
+            <div class="col-12 col-sm-10 col-md-8 col-lg-3 p-0">
+                <div class="card shadow-sm border-0">
                     <div class="card-header bg-white text-center py-3">
                         <div class="mb-3">
                             <i class="bi bi-cup-hot-fill text-success" style="font-size: 2.5rem;"></i>
@@ -55,12 +55,23 @@
 
 <style>
 .login-container {
-    background-color: #f8f9fa;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    width: 100vw;
 }
 .card {
     border-radius: 10px;
     overflow: hidden;
     border: none;
+    max-height: 90vh;
+    margin: 2vh auto;
 }
 .card-header {
     border-bottom: 1px solid rgba(0,0,0,.125);

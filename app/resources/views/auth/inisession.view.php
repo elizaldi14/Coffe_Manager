@@ -28,13 +28,13 @@
                         
                         <form action="" id="login-form">
                             <div class="mb-3">
-                                <label for="username" class="form-label">Usuario</label>
-                                <input type="text" class="form-control" id="username" name="username" 
-                                       placeholder="Ingresa tu usuario" required>
+                                <label for="email" class="form-label">Correo</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       placeholder="Ingresa tu correo" required>
                             </div>
                             <div class="mb-4">
-                                <label for="passwd" class="form-label">Contraseña</label>
-                                <input type="password" class="form-control" id="passwd" name="passwd" 
+                                <label for="password" class="form-label">Contraseña</label>
+                                <input type="password" class="form-control" id="password" name="password" 
                                        placeholder="Ingresa tu contraseña" required>
                             </div>
                             <div class="d-grid">
@@ -106,14 +106,22 @@ body {
                     method : 'POST',
                     body : data
                 })
-                .then( resp  => resp.json())
-                .then( resp => {
-                    if( resp.r !== false ){
-                        location.href = "/"
-                    }else{
-                        $("#error").removeClass('d-none')
+                .then(resp => resp.json())
+                .then(resp => {
+                    if (resp.r === true) {
+                        // Redirigir a la URL proporcionada o al dashboard por defecto
+                        window.location.href = resp.redirect || '/dashboard';
+                    } else {
+                        // Mostrar mensaje de error
+                        const errorMessage = resp.message || 'Error en las credenciales';
+                        alert(errorMessage);
+                        $("#error").removeClass('d-none');
                     }
-                }).catch( err => console.error( err ))
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    alert('Ocurrió un error al intentar iniciar sesión');
+                })
             })
         })
     </script>

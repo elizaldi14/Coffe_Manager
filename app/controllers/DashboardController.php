@@ -21,7 +21,7 @@ class DashboardController extends Controller {
             session_start();
         }
         
-        if (!isset($_SESSION['usuario'])) {
+        if (!isset($_SESSION['nombre'])) {
             // Si es una petición AJAX, devolver error 401
             if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
                 http_response_code(401);
@@ -29,7 +29,7 @@ class DashboardController extends Controller {
                 exit();
             } else {
                 // Si no es AJAX, redirigir al login
-                header('Location: ' . URL . 'auth/login');
+                header('Location: /Session/iniSession');
                 exit();
             }
         }
@@ -39,13 +39,41 @@ class DashboardController extends Controller {
      * Muestra la vista principal del dashboard
      */
     public function index() {
+        // Iniciar sesión si no está iniciada
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        
+        // Verificar si el usuario está autenticado
+        if (!isset($_SESSION['sv']) || $_SESSION['sv'] !== true) {
+            header('Location: /Session/iniSession');
+            exit();
+        }
+        
         // Obtener datos para el dashboard
         $producto = new ProductoModel();
         
+        // Definir la ruta de la vista (relativa al directorio de vistas)
+        $viewPath = 'dashboard/index';
+        
+        // Construir la ruta completa al archivo de vista
+        $viewFile = VIEWS . str_replace('/', DIRECTORY_SEPARATOR, $viewPath) . '.php';
+        
+        // Verificar si el archivo de vista existe
+        if (!file_exists($viewFile)) {
+            die("No se encontró la vista: " . $viewFile);
+        }
+        
         // Renderizar la vista del dashboard
-        View::render('dashboard/index', [
+        View::render($viewPath, [
             'title' => 'Panel de Control',
-            'usuario' => $_SESSION['usuario']
+            'usuario' => [
+                'nombre' => $_SESSION['nombre'] ?? 'Usuario',
+                'rol' => $_SESSION['rol'] ?? 'usuario'
+            ],
+            'productCount' => 0, // Valor temporal, puedes reemplazarlo con el conteo real
+            'categoryCount' => 0, // Valor temporal, puedes reemplazarlo con el conteo real
+            'userCount' => 0 // Valor temporal, puedes reemplazarlo con el conteo real
         ]);
     }
     

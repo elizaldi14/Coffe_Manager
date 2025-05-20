@@ -5,7 +5,7 @@
     use app\controllers\Controller as Controller;
     use app\classes\Views as View;
     use app\classes\Redirect as Redirect;
-    use app\models\user as user;
+    use app\models\usuarios as user;
 
     class SessionController extends Controller {
         public function __construct(){
@@ -26,15 +26,19 @@
 
             $user = new user();
 
-            $result = $user -> where([["username",$datos["username"]],
-                                      ["passwd",sha1($datos["passwd"])]])
+            $result = $user -> where([["email",$datos["email"]],
+                                      ["password",sha1($datos["password"])]])
                             ->get();
             if( count( json_decode($result)) > 0){
                 //Se registra la sesión
-               echo $this -> sessionRegister( $result );
-            }else{
+                $response = json_decode($this->sessionRegister($result), true);
+                if ($response['r'] === true) {
+                    $response['redirect'] = '/dashboard';
+                }
+                echo json_encode($response);
+            } else {
                 self::sessionDestroy();
-                echo json_encode( ["r" => false ]);
+                echo json_encode(["r" => false, "message" => "Credenciales incorrectas"]);
             }
         }
 
@@ -44,9 +48,9 @@
             $_SESSION['sv']       = true;
             $_SESSION['IP']       = $_SERVER['REMOTE_ADDR'];
             $_SESSION['id']       = $datos[0]->id;
-            $_SESSION['username'] = $datos[0]->username;
-            $_SESSION['passwd']   = $datos[0]->passwd;
-            $_SESSION['tipo']     = $datos[0]->tipo;
+            $_SESSION['nombre']   = $datos[0]->nombre;
+            $_SESSION['password'] = $datos[0]->password;
+            $_SESSION['rol']      = $datos[0]->rol;
             session_write_close();
             return json_encode( ["r" => true ]);
         }
@@ -56,15 +60,15 @@
             session_start();
             if( isset( $_SESSION['sv']) && $_SESSION['sv'] == true){
                 $datos = $_SESSION;
-                $result = $user -> where([["username",$datos["username"]],
-                                          ["passwd",$datos["passwd"]]])
+                $result = $user -> where([["email",$datos["email"]],
+                                          ["password",$datos["password"]]])
                                 ->get();
                 if( count( json_decode( $result )) > 0 && $datos['IP'] == $_SERVER['REMOTE_ADDR']){
                     session_write_close();
-                    return ['username' => $datos['username'],
+                    return ['email' => $datos['email'],
                             'sv' => $datos['sv'],
                             'id' => $datos['id'],
-                            'tipo' => $datos['tipo']];
+                            'rol' => $datos['rol']];
                 }else{
                     session_write_close();
                     self::sessionDestroy();

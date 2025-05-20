@@ -99,7 +99,7 @@
                         " where " . $this->w .
                         $this->o . 
                         $this->l;
-            //echo $sql;die; 
+            // echo $sql;die; 
             $r = $this->table->query( $sql );
             $result = [];
             while( $f = $r->fetch_assoc() ){

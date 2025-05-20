@@ -2,16 +2,16 @@
 
     namespace app\models;
 
-    class user extends Model {
+    class usuarios extends Model {
 
         protected $table;
         protected $fillable = [
-            'name',
-            'username',
+            'id',
+            'nombre',
             'email',
-            'passwd',
-            'tipo',
-            'activo',
+            'password',
+            'rol',
+            'creado_en',
         ];
 
         public $values = [];
@@ -23,12 +23,11 @@
 
         public function newUser($data) {
             $this -> values = [
-                $data['name'],
-                $data['username'],
+                $data['nombre'],
                 $data['email'],
-                sha1($data['passwd']),
-                2,
-                1,
+                sha1($data['password']),
+                $data['rol'],
+                date('Y-m-d H:i:s'),
             ];
             return $this -> create();
         }

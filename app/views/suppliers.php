@@ -9,7 +9,7 @@
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="../resource/assets/css/style.css">
 </head>
 <body>
     <div class="container-fluid">

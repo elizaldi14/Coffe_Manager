@@ -1,4 +1,4 @@
-<?php
+ -<?php
 // ...no incluir bootstrap.php aquí, el layout lo hace...
 ?>
 <link rel="stylesheet" href="/assets/css/cafe-theme.css">

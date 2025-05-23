@@ -8,34 +8,35 @@
     $page_title = 'Gestión de Productos';
     $page_heading = 'Gestión de Productos';
 
-    // Inicializar variables
-    $productos = [];
-    $categorias = [];
-    $proveedores = [];
-    $error = null;
+   <?php
+// Inicializar variables
+$productos = [];
+$categorias = [];
+$proveedores = [];
+$error = null;
 
-    try {
-        // Crear instancia del modelo
-        $model = new ProductoModel($db);
-        
-        // Obtener datos del modelo
-        $productos = $model->obtenerTodos();
-        $categorias = $model->obtenerCategorias();
-        $proveedores = $model->obtenerProveedores();
-        
-        // Configurar acciones de la página
-        $page_actions = '
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
-                <i class="bi bi-plus-circle me-1"></i> Añadir Producto
-            </button>';
-        
-        // Iniciar el buffer de salida
-        ob_start();
-    ?>
+try {
+    // Crear instancia del modelo (Asegúrate de que $db esté definido en este scope o inyectado)
+    // Ejemplo: $db = new PDO('mysql:host=localhost;dbname=your_db', 'user', 'password');
+    $model = new ProductoModel($db);
+
+    // Obtener datos del modelo
+    $productos = $model->obtenerTodos();
+    $categorias = $model->obtenerCategorias();
+    $proveedores = $model->obtenerProveedores();
+
+    // Configurar acciones de la página
+    $page_actions = '
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addProductModal">
+            <i class="bi bi-plus-circle me-1"></i> Añadir Producto
+        </button>';
+
+    // Iniciar el buffer de salida
+    ob_start();
+?>
 <link rel="stylesheet" href="../resource/assets/css/style.css">
-<!-- Contenido específico de la página de productos -->
 <div class="table-responsive">
-    <?php if ($error): ?>
+    <?php if ($error): // Este $error solo se llenaría si la inicialización o las primeras llamadas al modelo fallaran antes del try/catch ?>
     <div class="alert alert-danger">
         <?php echo htmlspecialchars($error); ?>
         <br>
@@ -51,7 +52,6 @@
     </div>
     <?php endif; ?>
 
-    <!-- Products Table -->
     <div class="table-responsive">
         <table class="table table-striped table-hover">
             <thead>
@@ -68,19 +68,21 @@
             <tbody>
                 <?php if (!empty($productos)): ?>
                 <?php foreach ($productos as $producto): ?>
-                <?php 
-                            // Asegurarse de que todos los campos requeridos existan
-                            $producto = array_merge([
-                                'id' => '',
-                                'nombre' => '',
-                                'descripcion' => '',
-                                'categoria_nombre' => 'Sin categoría',
-                                'proveedor_nombre' => 'Sin proveedor',
-                                'stock' => 0,
-                                'stock_minimo' => 0,
-                                'precio' => 0
-                            ], $producto);
-                            ?>
+                <?php
+                    // Asegurarse de que todos los campos requeridos existan con valores predeterminados
+                    $producto = array_merge([
+                        'id' => '',
+                        'nombre' => '',
+                        'descripcion' => '',
+                        'categoria_nombre' => 'Sin categoría',
+                        'proveedor_nombre' => 'Sin proveedor',
+                        'stock' => 0,
+                        'stock_minimo' => 0,
+                        'precio' => 0,
+                        'categoria_id' => '', // Asegurarse de que existan para el data-categoria
+                        'proveedor_id' => ''  // Asegurarse de que existan para el data-proveedor
+                    ], $producto);
+                ?>
                 <tr>
                     <td><?php echo htmlspecialchars($producto['id']); ?></td>
                     <td>
@@ -93,11 +95,11 @@
                     <td><?php echo htmlspecialchars($producto['categoria_nombre']); ?></td>
                     <td><?php echo htmlspecialchars($producto['proveedor_nombre']); ?></td>
                     <td>
-                        <?php 
-                                    $stock = (int)($producto['stock'] ?? 0);
-                                    $stockMinimo = (int)($producto['stock_minimo'] ?? 0);
-                                    $isLowStock = $stock <= $stockMinimo;
-                                    ?>
+                        <?php
+                            $stock = (int)($producto['stock'] ?? 0);
+                            $stockMinimo = (int)($producto['stock_minimo'] ?? 0);
+                            $isLowStock = $stock <= $stockMinimo;
+                        ?>
                         <span class="badge <?php echo $isLowStock ? 'bg-danger' : 'bg-success'; ?>">
                             <?php echo $stock; ?>
                         </span>
@@ -119,8 +121,8 @@
                                         data-id="<?php echo htmlspecialchars($producto['id']); ?>"
                                         data-nombre="<?php echo htmlspecialchars($producto['nombre']); ?>"
                                         data-descripcion="<?php echo htmlspecialchars($producto['descripcion']); ?>"
-                                        data-categoria="<?php echo htmlspecialchars($producto['categoria_id'] ?? ''); ?>"
-                                        data-proveedor="<?php echo htmlspecialchars($producto['proveedor_id'] ?? ''); ?>"
+                                        data-categoria="<?php echo htmlspecialchars($producto['categoria_id']); ?>"
+                                        data-proveedor="<?php echo htmlspecialchars($producto['proveedor_id']); ?>"
                                         data-precio="<?php echo htmlspecialchars($producto['precio']); ?>"
                                         data-stock="<?php echo htmlspecialchars($producto['stock']); ?>"
                                         data-stock-minimo="<?php echo htmlspecialchars($producto['stock_minimo']); ?>">
@@ -151,22 +153,23 @@
     <?php
     // Obtener el contenido del búfer
     $page_content = ob_get_clean();
-    
+
     // Incluir la plantilla base que ya contiene el menú
     include __DIR__ . '/../resource/layout/base.php';
-    
+
 } catch (Exception $e) {
     // Manejar el error
     error_log('Error en la aplicación: ' . $e->getMessage());
+    $error = 'Ha ocurrido un error al cargar los productos: ' . $e->getMessage(); // Establecer el error para mostrarlo en la vista
+    // También podrías redirigir o mostrar una página de error más amigable
     die('Ha ocurrido un error. Por favor, inténtalo de nuevo más tarde.');
 }
 ?>
 
     <?php if (isset($success)): ?>
-    <div class="alert alert-success"><?php echo $success; ?></div>
+    <div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
     <?php endif; ?>
 
-    <!-- Add Product Modal -->
     <div class="modal fade" id="addProductModal" tabindex="-1" aria-labelledby="addProductModalLabel"
         aria-hidden="true">
         <div class="modal-dialog">
@@ -181,6 +184,10 @@
                         <div class="mb-3">
                             <label for="productName" class="form-label">Nombre del Producto</label>
                             <input type="text" class="form-control" id="productName" name="nombre" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="productDescriptionAdd" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="productDescriptionAdd" name="descripcion" rows="3"></textarea>
                         </div>
                         <div class="mb-3">
                             <label for="productCategory" class="form-label">Categoría</label>
@@ -226,17 +233,15 @@
                                     min="0" required>
                             </div>
                         </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">Guardar</button> </div>
                     </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="saveProductBtn">Guardar</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Edit Product Modal -->
     <div class="modal fade" id="editProductModal" tabindex="-1" aria-labelledby="editProductModalLabel"
         aria-hidden="true">
         <div class="modal-dialog">
@@ -247,30 +252,34 @@
                 </div>
                 <div class="modal-body">
                     <form id="editProductForm">
-                        <input type="hidden" id="editProductId">
-                        <div class="mb-3">
+                        <input type="hidden" id="editProductId" name="id"> <div class="mb-3">
                             <label for="editProductName" class="form-label">Nombre del Producto</label>
-                            <input type="text" class="form-control" id="editProductName" required>
+                            <input type="text" class="form-control" id="editProductName" name="nombre" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editProductDescription" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="editProductDescription" name="descripcion" rows="3"></textarea>
                         </div>
                         <div class="mb-3">
                             <label for="editProductCategory" class="form-label">Categoría</label>
-                            <select class="form-select" id="editProductCategory" required>
+                            <select class="form-select" id="editProductCategory" name="categoria_id" required>
                                 <option value="">Seleccionar Categoría</option>
-                                <option value="1">Bebidas Calientes</option>
-                                <option value="2">Bebidas Frías</option>
-                                <option value="3">Panadería</option>
-                                <option value="4">Alimentos</option>
-                                <option value="5">Postres</option>
+                                <?php foreach ($categorias as $categoria): ?>
+                                    <option value="<?php echo htmlspecialchars($categoria['id']); ?>">
+                                        <?php echo htmlspecialchars($categoria['nombre'] ?? ''); ?>
+                                    </option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="mb-3">
                             <label for="editProductSupplier" class="form-label">Proveedor</label>
-                            <select class="form-select" id="editProductSupplier" required>
+                            <select class="form-select" id="editProductSupplier" name="proveedor_id" required>
                                 <option value="">Seleccionar Proveedor</option>
-                                <option value="1">Café Especial S.A.</option>
-                                <option value="2">Dulces Delicias</option>
-                                <option value="3">Alimentos Frescos</option>
-                                <option value="4">Lácteos del Valle</option>
+                                <?php foreach ($proveedores as $proveedor): ?>
+                                    <option value="<?php echo htmlspecialchars($proveedor['id']); ?>">
+                                        <?php echo htmlspecialchars($proveedor['nombre_empresa'] ?? ''); ?>
+                                    </option>
+                                <?php endforeach; ?>
                             </select>
                         </div>
                         <div class="row">
@@ -293,19 +302,17 @@
                                     step="0.01" min="0" required>
                             </div>
                         </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" id="updateProductBtn">Actualizar</button> </div>
                     </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn btn-primary" id="updateProductBtn">Actualizar</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div class="modal fade" id="deleteProductModal" tabindex="-1" aria-labelledby="deleteProductModalLabel"
-        aria-hidden="true">
+    <!-- Modal de eliminación -->
+    <div class="modal fade" id="deleteProductModal" tabindex="-1" aria-labelledby="deleteProductModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -315,17 +322,6 @@
                 <div class="modal-body">
                     <p>¿Está seguro de que desea eliminar este producto? Esta acción no se puede deshacer.</p>
                     <input type="hidden" id="deleteProductId">
-                    <div class="btn-group">
-                        <a href="/productos/editar/<?php echo $producto['id']; ?>"
-                            class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Editar">
-                            <i class="bi bi-pencil"></i>
-                        </a>
-                        <button class="btn btn-sm btn-outline-danger"
-                            onclick="confirmarEliminar(<?php echo $producto['id']; ?>)" data-bs-toggle="tooltip"
-                            title="Eliminar">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -335,131 +331,104 @@
         </div>
     </div>
 
-    <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Script para manejar la edición y eliminación de productos -->
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Configurar el modal de edición con los datos del producto
-        const editModal = document.getElementById('editProductModal');
-        if (editModal) {
-            editModal.addEventListener('show.bs.modal', function(event) {
-                const button = event.relatedTarget;
-                const id = button.getAttribute('data-id');
-                const nombre = button.getAttribute('data-nombre');
-                const descripcion = button.getAttribute('data-descripcion');
-                const categoria = button.getAttribute('data-categoria');
-                const proveedor = button.getAttribute('data-proveedor');
-                const stock = button.getAttribute('data-stock');
-                const stockMinimo = button.getAttribute('data-stock-minimo') || '0';
-                const precio = button.getAttribute('data-precio');
-
-                // Actualizar el formulario de edición
-                document.getElementById('editProductId').value = id;
-                document.getElementById('editProductName').value = nombre;
-                document.getElementById('editProductDescription').value = descripcion || '';
-                document.getElementById('editProductCategory').value = categoria;
-                document.getElementById('editProductSupplier').value = proveedor || '';
-                document.getElementById('editProductStock').value = stock;
-                document.getElementById('editProductMinStock').value = stockMinimo;
-                document.getElementById('editProductPrice').value = precio;
-            });
-        }
-
-        // Configurar el modal de eliminación
-        const deleteModal = document.getElementById('deleteProductModal');
-        if (deleteModal) {
-            deleteModal.addEventListener('show.bs.modal', function(event) {
-                const button = event.relatedTarget;
-                const id = button.getAttribute('data-id');
-                document.getElementById('deleteProductId').value = id;
-            });
-        }
+    $(document).ready(function() {
+    // --- EDITAR PRODUCTO ---
+    $(document).on('click', '.edit-product', function(e) {
+        e.preventDefault();
+        $('#editProductId').val($(this).data('id'));
+        $('#editProductName').val($(this).data('nombre'));
+        $('#editProductDescription').val($(this).data('descripcion') || '');
+        $('#editProductCategory').val(String($(this).data('categoria')));
+        $('#editProductSupplier').val(String($(this).data('proveedor')));
+        $('#editProductPrice').val($(this).data('precio'));
+        $('#editProductStock').val($(this).data('stock'));
+        $('#editProductMinStock').val($(this).data('stockMinimo'));
+        $('#editProductModal').modal('show');
     });
 
-    // Función para confirmar eliminación
-    function confirmarEliminar() {
-        const id = document.getElementById('deleteProductId').value;
-        if (confirm('¿Estás seguro de eliminar este producto?')) {
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = `/app/controllers/ProductoController.php?action=eliminar&id=${id}`;
-
-            // Agregar token CSRF si es necesario
-            const csrfToken = document.createElement('input');
-            csrfToken.type = 'hidden';
-            csrfToken.name = '_token';
-            csrfToken.value = document.querySelector('meta[name="csrf-token"]')?.content || '';
-            form.appendChild(csrfToken);
-
-            document.body.appendChild(form);
-            form.submit();
-        }
-    }
-
-    // Manejar la actualización de un producto
-    const updateProductBtn = document.getElementById('updateProductBtn');
-    if (updateProductBtn) {
-        updateProductBtn.addEventListener('click', function() {
-                // Obtener los valores del formulario
-                const id = document.getElementById('editProductId').value;
-                const nombre = document.getElementById('editProductName').value;
-                const categoria = document.getElementById('editProductCategory').value;
-                const proveedor = document.getElementById('editProductSupplier').value;
-                const stock = document.getElementById('editProductStock').value;
-                const stockMinimo = document.getElementById('editProductMinStock').value;
-                const precio = document.getElementById('editProductPrice').value;
-
-                // Validar que todos los campos requeridos estén completos
-                if (!nombre || !categoria || !proveedor || stock === '' || stockMinimo === '' || precio === '') {
-                    alert('Por favor complete todos los campos obligatorios');
-                    return;
+    $('#editProductForm').on('submit', function(e) {
+        e.preventDefault();
+        var formData = $(this).serialize();
+        $.ajax({
+            url: '../controllers/ProductoController.php?action=actualizar',
+            method: 'POST',
+            data: formData,
+            dataType: 'json',
+            success: function(resp) {
+                if (resp.success) {
+                    $('#editProductModal').modal('hide');
+                    location.reload();
+                } else {
+                    alert(resp.error || 'Error al actualizar el producto');
                 }
-
-                // Validar que el stock mínimo no sea mayor al stock actual
-                if (parseInt(stock) < parseInt(stockMinimo)) {
-                    alert('El stock no puede ser menor al stock mínimo');
-                    return;
-                }
-
-                // Crear el objeto con los datos del formulario
-                const formData = new FormData();
-                formData.append('nombre', nombre);
-                formData.append('categoria_id', categoria);
-                formData.append('proveedor_id', proveedor);
-                formData.append('stock', stock);
-                formData.append('stock_minimo', stockMinimo);
-                formData.append('precio', precio);
-
-                // Enviar la solicitud al servidor
-                const response = await fetch('/app/controllers/ProductoController.php?action=guardar', {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'Accept': 'application/json'
-                        }
-                    })
-                    .then(response => response.json())
-                    .then data => {
-                        if (data.error) {
-                            alert('Error: ' + data.error);
-                        } else {
-                            alert('Producto actualizado correctamente');
-                            // Cerrar el modal y recargar la página
-                            const modal = bootstrap.Modal.getInstance(document.getElementById(
-                                'editProductModal'));
-                            modal.hide();
-                            window.location.reload();
-                        }
-                    })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Error al actualizar el producto');
-            });
+            },
+            error: function(xhr) {
+                alert('Error en la comunicación con el servidor al actualizar producto.');
+                console.error('Error AJAX al actualizar producto:', xhr.responseText);
+            }
         });
-    }
-    </script>
+    });
+
+    // --- AGREGAR PRODUCTO ---
+    $('#addProductForm').on('submit', function(e) {
+        e.preventDefault();
+        var formData = new FormData(this);
+        $.ajax({
+            url: $(this).attr('action'),
+            method: $(this).attr('method'),
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: 'json',
+            success: function(resp) {
+                if (resp.success) {
+                    $('#addProductModal').modal('hide');
+                    alert('Producto añadido correctamente');
+                    location.reload();
+                } else {
+                    alert(resp.error || 'Error al añadir el producto');
+                }
+            },
+            error: function(xhr) {
+                alert('Error en la comunicación con el servidor al añadir producto.');
+                console.error('Error AJAX al añadir producto:', xhr.responseText);
+            }
+        });
+    });
+
+    // --- ELIMINAR PRODUCTO ---
+    $(document).on('click', '.delete-product', function(e) {
+        e.preventDefault();
+        $('#deleteProductId').val($(this).data('id'));
+        $('#deleteProductModal').modal('show');
+    });
+
+    $('#confirmDeleteBtn').on('click', function() {
+        var id = $('#deleteProductId').val();
+        $.ajax({
+            url: '../controllers/ProductoController.php?action=eliminar',
+            method: 'POST',
+            data: { id: id },
+            dataType: 'json',
+            success: function(resp) {
+                if (resp.success) {
+                    $('#deleteProductModal').modal('hide');
+                    location.reload();
+                } else {
+                    alert(resp.error || 'Error al eliminar el producto');
+                }
+            },
+            error: function(xhr) {
+                alert('Error en la comunicación con el servidor al eliminar producto.');
+                console.error('Error AJAX al eliminar producto:', xhr.responseText);
+            }
+        });
+    });
+});
+</script>
     <!-- Custom JS -->
     <script src="../resource/assets/js/main.js"></script>
 

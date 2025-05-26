@@ -7,7 +7,14 @@ use app\controllers\ErrorController as ErrorController;
 class Router
 {
     private $uri = "";
+    private $routes = [];
+
     public function __construct() {}
+
+    public function add($route, $action)
+    {
+        $this->routes[$route] = $action;
+    }
 
     public function route()
     {
@@ -77,3 +84,12 @@ class Router
         return $params;
     }
 }
+
+// Inicializa el router si no está definido
+if (!isset($router)) {
+    $router = new Router();
+}
+
+// Agrega rutas aquí
+$router->add('proveedor/delete/(\d+)', 'ProveedorController@delete');
+// ...otras rutas...

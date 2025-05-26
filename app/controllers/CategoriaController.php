@@ -2,22 +2,36 @@
 
 namespace app\controllers;
 
+use app\classes\DB;
 use app\models\Categoria;
 use app\classes\View;
 
-class CategoriaController extends Controller {
-    public function index() {
+class CategoriaController extends Controller
+{
+    private $db; // Define la propiedad $db
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->db = new DB(); // Inicializa la conexión a la base de datos
+        $this->db->connect(); // Conecta a la base de datos
+    }
+
+    public function index()
+    {
         View::render('categoria/categories', [
             'title' => 'Gestión de Categorías'
         ]);
     }
 
-    public function list() {
+    public function list()
+    {
         $cat = new Categoria();
         echo json_encode($cat->all()->get());
     }
 
-    public function store() {
+    public function store()
+    {
         $cat = new Categoria();
         $data = filter_input_array(INPUT_POST, FILTER_SANITIZE_SPECIAL_CHARS);
 
@@ -38,7 +52,8 @@ class CategoriaController extends Controller {
         echo json_encode(['success' => true]);
     }
 
-    public function update($params) {
+    public function update($params)
+    {
         $id = $params[2] ?? null;
         $cat = new Categoria();
         $data = filter_input_array(INPUT_POST, FILTER_SANITIZE_SPECIAL_CHARS);
@@ -47,10 +62,29 @@ class CategoriaController extends Controller {
         echo json_encode(['success' => true]);
     }
 
-    public function delete($params) {
+    public function delete($params)
+    {
         $id = $params[2] ?? null;
-        $cat = new Categoria();
-        $cat->where([['id', $id]])->delete();
-        echo json_encode(['success' => true]);
+
+        if (!$id || !is_numeric($id)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'ID de categoría no válido o no proporcionado']);
+            return;
+        }
+
+        try {
+            $result = $this->db->delete('categorias', $id); // Ahora $db está inicializado
+
+            if ($result) {
+                echo json_encode(['success' => true, 'message' => 'Categoría eliminada correctamente']);
+            } else {
+                http_response_code(404);
+                echo json_encode(['error' => 'Categoría no encontrada']);
+            }
+        } catch (\Exception $e) {
+            error_log('Error en CategoriaController@delete: ' . $e->getMessage());
+            http_response_code(500);
+            echo json_encode(['error' => 'Error al eliminar la categoría: ' . $e->getMessage()]);
+        }
     }
 }

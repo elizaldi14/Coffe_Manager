@@ -11,7 +11,7 @@
     <!-- SweetAlert2 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.5/dist/sweetalert2.min.css">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/app/resource/assets/css/style.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/app/public/assets/css/style.css">
 </head>
 <body>
     <div class="container-fluid">
@@ -60,7 +60,7 @@
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.5/dist/sweetalert2.all.min.js"></script>
         
         <!-- Custom JavaScript -->
-        <script src="<?php echo BASE_URL; ?>/app/resource/assets/js/main.js"></script>
+        <script src="<?php echo BASE_URL; ?>/app/public/assets/js/app.js"></script>
         
         <?php if (isset($scripts)): ?>
             <?php echo $scripts; ?>

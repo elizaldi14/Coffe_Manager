@@ -1,65 +1,165 @@
 <?php
-class ProductoModel {
-    private $db;
 
-    public function __construct($db) {
+namespace app\models;
+
+class ProductoModel
+{
+    private $db;
+    private $columns = '*'; // Define las columnas por defecto
+
+    public function __construct($db)
+    {
         $this->db = $db;
     }
 
     /**
-     * Obtiene todos los productos activos
+     * Define las columnas a seleccionar en la consulta
      */
-    public function obtenerTodos() {
+    public function select(array $columns)
+    {
+        $this->columns = implode(',', $columns);
+        return $this; // Devuelve la instancia para permitir encadenamiento
+    }
+
+    /**
+     * Actualiza un producto existente
+     * @param int $id ID del producto a actualizar
+     * @param array $data Datos a actualizar
+     * @return bool Retorna true si se actualizó correctamente, false en caso contrario
+     */
+    public function update($id, array $data)
+    {
         try {
-            $query = "SELECT p.* 
-                     FROM productos p
-                     LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
-                     LEFT JOIN proveedores pr ON p.id_proveedor = pr.id_proveedor
-                     WHERE p.activo = 1
-                     ORDER BY p.nombre_producto ASC";
+            // Validar que el ID sea numérico
+            if (!is_numeric($id)) {
+                throw new \InvalidArgumentException('ID de producto no válido');
+            }
+
+            // Validar que haya datos para actualizar
+            if (empty($data)) {
+                throw new \InvalidArgumentException('No se proporcionaron datos para actualizar');
+            }
+
+            // Construir la consulta de actualización
+            $updates = [];
+            $params = [];
+            $types = '';
+
+            // Mapear los campos permitidos y sus tipos
+            $allowedFields = [
+                'nombre_producto' => 's',
+                'precio' => 'd',
+                'stock' => 'i',
+                'stock_minimo' => 'i',
+                'id_categoria' => 'i',
+                'id_proveedor' => 'i',
+                'activo' => 'i'
+            ];
+
+            // Preparar los valores para la consulta
+            foreach ($data as $field => $value) {
+                if (array_key_exists($field, $allowedFields)) {
+                    $updates[] = "`$field` = ?";
+                    $params[] = $value;
+                    $types .= $allowedFields[$field];
+                }
+            }
+
+            // Si no hay campos válidos para actualizar
+            if (empty($updates)) {
+                throw new \InvalidArgumentException('No se proporcionaron campos válidos para actualizar');
+            }
+
+            // Agregar el ID a los parámetros
+            $params[] = $id;
+            $types .= 'i';
+
+            // Construir la consulta SQL
+            $sql = "UPDATE productos SET " . implode(', ', $updates) . " WHERE id_producto = ?";
+
+            // Preparar la consulta
+            $stmt = $this->db->prepare($sql);
+            if (!$stmt) {
+                throw new \RuntimeException('Error al preparar la consulta: ' . $this->db->error);
+            }
+
+            // Vincular parámetros dinámicamente
+            $bindParams = array_merge([$types], $params);
             
-            $result = $this->db->query($query);
-            
-            if (!$result) {
-                throw new Exception('Error en la consulta: ' . $this->db->error);
+            // Usar call_user_func_array para pasar los parámetros por referencia
+            $refs = [];
+            foreach($bindParams as $key => $value) {
+                $refs[$key] = &$bindParams[$key];
             }
             
+            call_user_func_array([$stmt, 'bind_param'], $refs);
+
+            // Ejecutar la consulta
+            $result = $stmt->execute();
+            $affectedRows = $stmt->affected_rows;
+            $stmt->close();
+
+            // Retornar true si se afectó al menos una fila
+            return $affectedRows > 0;
+            
+        } catch (\Exception $e) {
+            error_log('Error en ProductoModel@update: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Obtiene todos los productos activos con las columnas seleccionadas
+     */
+    public function all()
+    {
+        try {
+            $query = "SELECT {$this->columns} 
+                      FROM productos p
+                      LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
+                      LEFT JOIN proveedores pr ON p.id_proveedor = pr.id_proveedor
+                      WHERE p.activo = 1";
+
+            $result = $this->db->query($query);
+
+            if (!$result) {
+                throw new \Exception('Error en la consulta: ' . $this->db->error);
+            }
+
             $productos = [];
             while ($row = $result->fetch_assoc()) {
-                $productos[] = $this->mapearProducto($row);
+                $productos[] = $row;
             }
-            
+
             return $productos;
-            
-        } catch (Exception $e) {
-            error_log('Error en ProductoModel@obtenerTodos: ' . $e->getMessage());
-            return [];
+        } catch (\Exception $e) {
+            throw new \Exception('Error en ProductoModel@all: ' . $e->getMessage());
         }
     }
 
     /**
      * Obtiene un producto por su ID
      */
-    public function obtenerPorId($id) {
+    public function obtenerPorId($id)
+    {
         try {
             $query = "SELECT p.* 
                      FROM productos p
                      LEFT JOIN categorias c ON p.id_categoria = c.id_categoria
                      LEFT JOIN proveedores pr ON p.id_proveedor = pr.id_proveedor
                      WHERE p.id_producto = ? AND p.activo = 1";
-            
+
             $stmt = $this->db->prepare($query);
             $stmt->bind_param('i', $id);
             $stmt->execute();
-            
+
             $result = $stmt->get_result();
-            
+
             if ($result->num_rows === 0) {
                 return null;
             }
-            
+
             return $this->mapearProducto($result->fetch_assoc());
-            
         } catch (Exception $e) {
             error_log('Error en ProductoModel@obtenerPorId: ' . $e->getMessage());
             return null;
@@ -69,11 +169,12 @@ class ProductoModel {
     /**
      * Crea un nuevo producto
      */
-    public function crear($datos) {
+    public function crear($datos)
+    {
         try {
             // Registrar los datos recibidos para depuración
             error_log('Datos recibidos en ProductoModel@crear: ' . print_r($datos, true));
-            
+
             // Verificar que los campos requeridos estén presentes
             $camposRequeridos = ['nombre', 'precio', 'stock', 'stock_minimo', 'categoria_id'];
             foreach ($camposRequeridos as $campo) {
@@ -82,20 +183,20 @@ class ProductoModel {
                     return false;
                 }
             }
-            
+
             // Preparar la consulta SQL
             $query = "INSERT INTO productos (nombre_producto, precio, stock, stock_minimo, id_categoria, id_proveedor, activo) 
                      VALUES (?, ?, ?, ?, ?, ?, 1)";
-            
+
             error_log("Consulta SQL: $query");
-            
+
             // Preparar la declaración
             $stmt = $this->db->prepare($query);
             if ($stmt === false) {
                 error_log('Error al preparar la consulta: ' . $this->db->error);
                 return false;
             }
-            
+
             // Vincular parámetros
             $proveedorId = !empty($datos['proveedor_id']) ? $datos['proveedor_id'] : null;
             $stmt->bind_param(
@@ -107,21 +208,31 @@ class ProductoModel {
                 $datos['categoria_id'],
                 $proveedorId
             );
-            
+
             // Ejecutar la consulta
             $resultado = $stmt->execute();
-            
+
             if (!$resultado) {
                 error_log('Error al ejecutar la consulta: ' . $stmt->error);
                 return false;
             }
-            
+
             // Obtener el ID del producto insertado
-            $nuevoId = $this->db->insert_id;
+            $nuevoId = $stmt->insert_id;
+            
+            if (!$nuevoId) {
+                // Si no se pudo obtener el ID directamente, intentar con una consulta
+                $result = $this->db->query("SELECT LAST_INSERT_ID() as id");
+                if ($result && $row = $result->fetch_assoc()) {
+                    $nuevoId = $row['id'];
+                } else {
+                    error_log('No se pudo obtener el ID del producto insertado');
+                    return false;
+                }
+            }
+            
             error_log("Producto creado exitosamente con ID: $nuevoId");
-            
             return $nuevoId;
-            
         } catch (Exception $e) {
             error_log('Error en ProductoModel@crear: ' . $e->getMessage() . ' en ' . $e->getFile() . ':' . $e->getLine());
             return false;
@@ -134,19 +245,20 @@ class ProductoModel {
     /**
      * Obtiene todas las categorías activas
      */
-    public function obtenerCategorias() {
+    public function obtenerCategorias()
+    {
         try {
             $query = "SELECT id_categoria, nombre_categoria 
                      FROM categorias 
                      WHERE activo = 1 
                      ORDER BY nombre_categoria ASC";
-            
+
             $result = $this->db->query($query);
-            
+
             if (!$result) {
                 throw new Exception('Error en la consulta: ' . $this->db->error);
             }
-            
+
             $categorias = [];
             while ($row = $result->fetch_assoc()) {
                 $categorias[] = [
@@ -154,9 +266,8 @@ class ProductoModel {
                     'nombre' => $row['nombre_categoria']
                 ];
             }
-            
+
             return $categorias;
-            
         } catch (Exception $e) {
             error_log('Error en ProductoModel@obtenerCategorias: ' . $e->getMessage());
             return [];
@@ -166,19 +277,20 @@ class ProductoModel {
     /**
      * Obtiene todos los proveedores activos
      */
-    public function obtenerProveedores() {
+    public function obtenerProveedores()
+    {
         try {
             $query = "SELECT id_proveedor, nombre_empresa 
                      FROM proveedores 
                      WHERE activo = 1 
                      ORDER BY nombre_empresa ASC";
-            
+
             $result = $this->db->query($query);
-            
+
             if (!$result) {
                 throw new Exception('Error en la consulta: ' . $this->db->error);
             }
-            
+
             $proveedores = [];
             while ($row = $result->fetch_assoc()) {
                 $proveedores[] = [
@@ -186,16 +298,16 @@ class ProductoModel {
                     'nombre_empresa' => $row['nombre_empresa']
                 ];
             }
-            
+
             return $proveedores;
-            
         } catch (Exception $e) {
             error_log('Error en ProductoModel@obtenerProveedores: ' . $e->getMessage());
             return [];
         }
     }
 
-    public function verificarDatos() {
+    public function verificarDatos()
+    {
         try {
             // Verificar conexión
             if (!$this->db->ping()) {
@@ -274,36 +386,75 @@ class ProductoModel {
     /**
      * Actualiza un producto existente
      */
-    public function actualizar($id, $datos) {
+    public function actualizar($id, $datos)
+    {
         try {
-            $query = "UPDATE productos 
-                     SET nombre_producto = ?, 
-                         precio = ?, 
-                         stock = ?, 
-                         stock_minimo = ?, 
-                         id_categoria = ?, 
-                         id_proveedor = ?
-                     WHERE id_producto = ?";
+            // Construir la consulta dinámicamente basada en los campos proporcionados
+            $updates = [];
+            $params = [];
+            $types = '';
             
-            $stmt = $this->db->prepare($query);
-            $stmt->bind_param(
-                'sddiiii',
-                $datos['nombre'],
-                $datos['precio'],
-                $datos['stock'],
-                $datos['stock_minimo'],
-                $datos['categoria_id'],
-                $datos['proveedor_id'],
-                $id
-            );
+            // Mapear los campos permitidos y sus tipos
+            $allowedFields = [
+                'nombre_producto' => 's',
+                'precio' => 'd',
+                'stock' => 'i',
+                'stock_minimo' => 'i',
+                'id_categoria' => 'i',
+                'id_proveedor' => 'i'
+            ];
             
-            if (!$stmt->execute()) {
-                throw new Exception('Error al actualizar el producto: ' . $stmt->error);
+            // Preparar los valores para la consulta
+            foreach ($datos as $field => $value) {
+                if (array_key_exists($field, $allowedFields)) {
+                    $updates[] = "`$field` = ?";
+                    $params[] = $value;
+                    $types .= $allowedFields[$field];
+                }
             }
             
-            return $stmt->affected_rows > 0;
+            // Si no hay campos para actualizar, retornar falso
+            if (empty($updates)) {
+                error_log('No se proporcionaron campos válidos para actualizar');
+                return false;
+            }
             
-        } catch (Exception $e) {
+            // Agregar el ID a los parámetros
+            $params[] = $id;
+            $types .= 'i';
+            
+            // Construir la consulta SQL
+            $query = "UPDATE productos SET " . implode(', ', $updates) . " WHERE id_producto = ?";
+            error_log("Consulta SQL de actualización: $query");
+            error_log("Parámetros: " . print_r($params, true));
+            
+            // Preparar la consulta
+            $stmt = $this->db->prepare($query);
+            if ($stmt === false) {
+                error_log('Error al preparar la consulta: ' . $this->db->error);
+                return false;
+            }
+            
+            // Vincular parámetros dinámicamente
+            $bindParams = array_merge([$types], $params);
+            
+            // Usar call_user_func_array para pasar los parámetros por referencia
+            $refs = [];
+            foreach($bindParams as $key => $value) {
+                $refs[$key] = &$bindParams[$key];
+            }
+            
+            call_user_func_array([$stmt, 'bind_param'], $refs);
+
+            // Ejecutar la consulta
+            $result = $stmt->execute();
+            $affectedRows = $stmt->affected_rows;
+            $stmt->close();
+
+            // Retornar true si se afectó al menos una fila
+            return $affectedRows > 0;
+            
+        } catch (\Exception $e) {
             error_log('Error en ProductoModel@actualizar: ' . $e->getMessage());
             return false;
         }
@@ -312,23 +463,23 @@ class ProductoModel {
     /**
      * Elimina un producto (borrado lógico)
      */
-    public function eliminar($id) {
+    public function eliminar($id)
+    {
         try {
             $query = "UPDATE productos SET activo = 0 WHERE id_producto = ?";
-            
+
             $stmt = $this->db->prepare($query);
             if (!$stmt) {
                 throw new Exception('Error al preparar la consulta: ' . $this->db->error);
             }
-            
+
             $stmt->bind_param('i', $id);
-            
+
             if (!$stmt->execute()) {
                 throw new Exception('Error al eliminar el producto: ' . $stmt->error);
             }
-            
+
             return $stmt->affected_rows > 0;
-            
         } catch (Exception $e) {
             error_log('Error en ProductoModel@eliminar: ' . $e->getMessage());
             return false;
@@ -340,7 +491,8 @@ class ProductoModel {
     /**
      * Mapea los datos del producto a un array asociativo
      */
-    private function mapearProducto($row) {
+    private function mapearProducto($row)
+    {
         return [
             'id' => (int)$row['id_producto'],
             'nombre' => $row['nombre_producto'],
@@ -363,24 +515,25 @@ class ProductoModel {
     /**
      * Verifica si las tablas existen y tienen datos
      */
-    public function verificarTablas() {
+    public function verificarTablas()
+    {
         try {
             // Verificar categorías
             $queryCategorias = "SELECT COUNT(*) as total FROM categorias";
             $resultCategorias = $this->db->query($queryCategorias);
             $rowCategorias = $resultCategorias->fetch_assoc();
-            
+
             // Verificar proveedores
             $queryProveedores = "SELECT COUNT(*) as total FROM proveedores";
             $resultProveedores = $this->db->query($queryProveedores);
             $rowProveedores = $resultProveedores->fetch_assoc();
-            
+
             error_log('Verificación de tablas: ');
             error_log('Tablas categorias: ' . ($resultCategorias ? 'Existe' : 'No existe'));
             error_log('Registros categorias: ' . ($rowCategorias ? $rowCategorias['total'] : '0'));
             error_log('Tablas proveedores: ' . ($resultProveedores ? 'Existe' : 'No existe'));
             error_log('Registros proveedores: ' . ($rowProveedores ? $rowProveedores['total'] : '0'));
-            
+
             return [
                 'categorias' => [
                     'existe' => $resultCategorias !== false,
@@ -391,7 +544,6 @@ class ProductoModel {
                     'registros' => $rowProveedores ? $rowProveedores['total'] : 0
                 ]
             ];
-            
         } catch (Exception $e) {
             error_log('Error en ProductoModel@verificarTablas: ' . $e->getMessage());
             return [

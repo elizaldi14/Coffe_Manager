@@ -45,17 +45,17 @@
                 <input type="hidden" name="id_producto" id="producto-id">
                 <div class="mb-3">
                     <label for="producto-nombre" class="form-label">Nombre</label>
-                    <input type="text" class="form-control" name="nombre_producto" id="producto-nombre" required>
+                    <input type="text" class="form-control" name="nombre" id="producto-nombre" required>
                 </div>
                 <div class="mb-3">
                     <label for="producto-categoria" class="form-label">Categoría</label>
-                    <select class="form-select" name="id_categoria" id="producto-categoria" required>
+                    <select class="form-select" name="categoria" id="producto-categoria" required>
                         <option value="">Seleccione una categoría</option>
                     </select>
                 </div>
                 <div class="mb-3">
                     <label for="producto-proveedor" class="form-label">Proveedor</label>
-                    <select class="form-select" name="id_proveedor" id="producto-proveedor" required>
+                    <select class="form-select" name="proveedor" id="producto-proveedor" required>
                         <option value="">Seleccione un proveedor</option>
                     </select>
                 </div>
@@ -90,11 +90,17 @@ $(function() {
             let productos = typeof data === 'string' ? JSON.parse(data) : data;
             let html = '';
             $.each(productos, function(i, prod) {
+                // Asegurarse de que los IDs de categoría y proveedor estén definidos
+                const idCategoria = prod.id_categoria || '';
+                const idProveedor = prod.id_proveedor || '';
+                const nombreCategoria = prod.categoria || 'Sin categoría';
+                const nombreProveedor = prod.proveedor || 'Sin proveedor';
+
                 html += `<tr>
                     <td>${prod.id_producto}</td>
                     <td>${prod.nombre_producto}</td>
-                    <td>${prod.categoria ?? ''}</td>
-                    <td>${prod.proveedor ?? ''}</td>
+                    <td>${nombreCategoria}</td>
+                    <td>${nombreProveedor}</td>
                     <td>
                         <span class="badge rounded-pill px-3 py-2" style="background: var(--primary-color); color: #fff;">
                             ${prod.stock}
@@ -111,9 +117,10 @@ $(function() {
                             data-nombre="${prod.nombre_producto}"
                             data-precio="${prod.precio}"
                             data-stock="${prod.stock}"
-                            data-categoria="${prod.id_categoria ?? ''}"
-                            data-proveedor="${prod.id_proveedor ?? ''}"
-                            data-stock_minimo="${prod.stock_minimo ?? 0}">
+                            data-categoria="${idCategoria}"
+                            data-proveedor="${idProveedor}"
+                            data-stock_minimo="${prod.stock_minimo || 0}"
+                            data-nombre_producto="${prod.nombre_producto}">
                             <i class="bi bi-pencil"></i>
                         </button>
                         <button class="btn btn-danger btn-sm btn-delete rounded-pill" data-id="${prod.id_producto}">
@@ -169,33 +176,157 @@ $(function() {
     });
 
     $(document).on('click', '.btn-edit', function() {
-        $('#modal-producto-title').text('Editar Producto');
-        $('#producto-id').val($(this).data('id'));
-        $('#producto-nombre').val($(this).data('nombre'));
-        $('#producto-precio').val($(this).data('precio'));
-        $('#producto-stock').val($(this).data('stock'));
-        $('#producto-stock-minimo').val($(this).data('stock_minimo') ?? '0');
-
-        const categoriaId = $(this).data('categoria');
-        const proveedorId = $(this).data('proveedor');
-
-        // Esperar que ambos selects se carguen antes de mostrar el modal
-        cargarCategoriasSelect(categoriaId, () => {
-            cargarProveedoresSelect(proveedorId, () => {
-                $('#modal-producto').modal('show');
+        const $btn = $(this);
+        const categoriaId = $btn.data('categoria');
+        const proveedorId = $btn.data('proveedor');
+        
+        // Mostrar loading
+        const $modal = $('#modal-producto');
+        $modal.modal('show');
+        
+        // Limpiar el modal
+        $modal.find('input').val('');
+        $modal.find('select').val('');
+        
+        // Agregar loading
+        $modal.find('.modal-content').append('<div class="modal-loading" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.8); display: flex; justify-content: center; align-items: center; z-index: 1050;"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Cargando...</span></div></div>');
+        
+        // Primero cargamos las categorías
+        cargarCategoriasSelect(categoriaId, function() {
+            console.log('Categorías cargadas, ID seleccionado:', categoriaId);
+            
+            // Luego cargamos los proveedores
+            cargarProveedoresSelect(proveedorId, function() {
+                console.log('Proveedores cargados, ID seleccionado:', proveedorId);
+                
+                // Llenamos el formulario con los datos del producto
+                $('#modal-producto-title').text('Editar Producto');
+                $('#producto-id').val($btn.data('id'));
+                $('#producto-nombre').val($btn.data('nombre_producto'));
+                $('#producto-precio').val($btn.data('precio'));
+                $('#producto-stock').val($btn.data('stock'));
+                $('#producto-stock-minimo').val($btn.data('stock_minimo') || '0');
+                
+                // Forzar la actualización de los selects
+                if (categoriaId) {
+                    $('#producto-categoria').val(categoriaId).trigger('change');
+                }
+                if (proveedorId) {
+                    $('#producto-proveedor').val(proveedorId).trigger('change');
+                }
+                
+                // Ocultar loading
+                $('.modal-loading').remove();
+                
+                // Debug: verificar valores seleccionados
+                console.log('Valor seleccionado en categoría:', $('#producto-categoria').val());
+                console.log('Valor seleccionado en proveedor:', $('#producto-proveedor').val());
             });
         });
     });
 
     $('#form-producto').submit(function(e) {
         e.preventDefault();
-        let id = $('#producto-id').val();
-        let url = id ? '/producto/update/' + id : '/producto/store';
-        $.post(url, $(this).serialize(), function(resp) {
-            $('#modal-producto').modal('hide');
-            cargarProductos();
-            Swal.fire('¡Éxito!', 'Producto guardado.', 'success');
-        }, 'json');
+        
+        // Crear un objeto FormData a partir del formulario
+        const formData = new FormData(this);
+        
+        // Si hay un ID, agregar el método _method=POST para simular PUT
+        const id = $('#producto-id').val();
+        if (id) {
+            formData.append('_method', 'PUT');
+        }
+        
+        // Mostrar los datos del formulario en la consola para depuración
+        console.log('Datos del formulario a enviar:', Object.fromEntries(formData));
+        
+        const url = id ? '/producto/update/' + id : '/producto/store';
+        
+        // Mostrar loading
+        const $submitBtn = $(this).find('button[type="submit"]');
+        const originalBtnText = $submitBtn.html();
+        $submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...');
+        
+        // Configurar la URL para incluir el ID como parámetro en lugar de en la ruta
+        let requestUrl = '/producto/update';
+        if (id) {
+            requestUrl += '?id=' + id;
+        } else {
+            requestUrl = '/producto/store';
+        }
+        
+        $.ajax({
+            url: requestUrl,
+            type: 'POST',
+            data: formData,
+            processData: false,  // Importante para FormData
+            contentType: false,   // Importante para FormData
+            success: function(response) {
+                try {
+                    // Si la respuesta es un string, intentar parsearla como JSON
+                    let data = response;
+                    if (typeof response === 'string') {
+                        try {
+                            data = JSON.parse(response);
+                        } catch (e) {
+                            console.error('Error al parsear la respuesta como JSON:', e);
+                            // Si hay un error al parsear, mostrar un mensaje de error
+                            Swal.fire({
+                                title: 'Error',
+                                text: 'Error al procesar la respuesta del servidor',
+                                icon: 'error',
+                                confirmButtonText: 'Entendido'
+                            });
+                            return;
+                        }
+                    }
+                    
+                    if (data.success) {
+                        // Cerrar el modal y recargar la tabla
+                        $('#modal-producto').modal('hide');
+                        cargarProductos();
+                        
+                        // Mostrar mensaje de éxito
+                        Swal.fire({
+                            title: '¡Éxito!',
+                            text: data.message || (id ? 'Producto actualizado correctamente' : 'Producto creado correctamente'),
+                            icon: 'success',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        // Mostrar mensaje de error del servidor
+                        Swal.fire({
+                            title: 'Error',
+                            text: data.error || 'Ocurrió un error al procesar la solicitud',
+                            icon: 'error',
+                            confirmButtonText: 'Entendido'
+                        });
+                    }
+                } catch (e) {
+                    console.error('Error al procesar la respuesta del servidor:', e, response);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Error inesperado al procesar la respuesta del servidor',
+                        icon: 'error',
+                        confirmButtonText: 'Entendido'
+                    });
+                }
+            },
+            error: function(xhr) {
+                let errorMsg = 'Error al procesar la solicitud';
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    errorMsg = response.error || errorMsg;
+                } catch (e) {
+                    console.error('Error parsing error response:', e);
+                }
+                Swal.fire('Error', errorMsg, 'error');
+            },
+            complete: function() {
+                $submitBtn.prop('disabled', false).html(originalBtnText);
+            }
+        });
     });
 
     $(document).on('click', '.btn-delete', function() {

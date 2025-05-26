@@ -2,15 +2,19 @@
 
 namespace app\controllers;
 
-use app\models\Producto as ProductoModel;
-use app\models\Categoria as CategoriaModel;
-use app\models\Proveedor as ProveedorModel;
+use app\models\ProductoModel;
+use app\models\Categoria;
+use app\models\Proveedor;
 use app\classes\View as View;
+use app\classes\DB;
 
 class DashboardController extends Controller {
+    private $db;
 
-    public function __construct() {
+    public function __construct(){
         parent::__construct();
+        $this->db = new DB();
+        $this->db->connect();
     }
 
     /**
@@ -27,9 +31,9 @@ class DashboardController extends Controller {
      * Devuelve los totales de productos, categorías y proveedores (API)
      */
     public function getData() {
-        $productos = (new ProductoModel())->count();
-        $categorias = (new CategoriaModel())->count();
-        $proveedores = (new ProveedorModel())->count();
+        $productos = (new ProductoModel($this->db))->count();
+        $categorias = (new Categoria($this->db))->count();
+        $proveedores = (new Proveedor($this->db))->count();
 
         echo json_encode([
             'productos' => $productos,

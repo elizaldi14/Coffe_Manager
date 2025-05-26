@@ -24,7 +24,7 @@ class Categoria extends DB {
         $sql = "SELECT COUNT($c) as total FROM categorias";
         $result = $this->conex->query($sql);
         $row = $result ? $result->fetch_assoc() : ['total' => 0];
-        return $row['total'] ?? 0;
+        return (int)($row['total'] ?? 0);
     }
 
    public function update($id, $data) {

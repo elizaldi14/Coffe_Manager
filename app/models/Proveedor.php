@@ -24,6 +24,6 @@ class Proveedor extends DB {
         $sql = "SELECT COUNT($c) as total FROM proveedores";
         $result = $this->conex->query($sql);
         $row = $result ? $result->fetch_assoc() : ['total' => 0];
-        return $row['total'] ?? 0;
+        return (int)($row['total'] ?? 0);
     }
 }

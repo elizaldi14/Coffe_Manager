@@ -99,8 +99,8 @@ class ProductoModel
             $affectedRows = $stmt->affected_rows;
             $stmt->close();
 
-            // Retornar true si se afectó al menos una fila
-            return $affectedRows > 0;
+            // Retornar true incluso si no hubo cambios (afectó 0 filas)
+            return true;
             
         } catch (\Exception $e) {
             error_log('Error en ProductoModel@update: ' . $e->getMessage());
@@ -451,8 +451,8 @@ class ProductoModel
             $affectedRows = $stmt->affected_rows;
             $stmt->close();
 
-            // Retornar true si se afectó al menos una fila
-            return $affectedRows > 0;
+            // Retornar true incluso si no hubo cambios (afectó 0 filas)
+            return true;
             
         } catch (\Exception $e) {
             error_log('Error en ProductoModel@actualizar: ' . $e->getMessage());
@@ -487,6 +487,29 @@ class ProductoModel
     }
 
 
+
+    /**
+     * Cuenta el número total de productos activos
+     * @return int Número de productos activos
+     */
+    public function count()
+    {
+        try {
+            $query = "SELECT COUNT(*) as total FROM productos";
+            $result = $this->db->query($query);
+            
+            if (!$result) {
+                throw new \Exception('Error al contar productos: ' . $this->db->error);
+            }
+            
+            $row = $result->fetch_assoc();
+            return (int)$row['total'];
+            
+        } catch (\Exception $e) {
+            error_log('Error en ProductoModel@count: ' . $e->getMessage());
+            return 0;
+        }
+    }
 
     /**
      * Mapea los datos del producto a un array asociativo

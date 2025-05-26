@@ -5,7 +5,7 @@
     use app\controllers\Controller as Controller;
     use app\classes\Views as View;
     use app\classes\Redirect as Redirect;
-    use app\models\user as user;
+    use app\models\Usuario as User;
 
     class SessionController extends Controller {
         public function __construct(){
@@ -24,7 +24,7 @@
         public function userAuth(){
             $datos = filter_input_array(INPUT_POST, FILTER_SANITIZE_SPECIAL_CHARS);
 
-            $user = new user();
+                        $user = new User();
 
             $result = $user -> where([["username",$datos["username"]],
                                       ["passwd",sha1($datos["passwd"])]])
@@ -52,7 +52,7 @@
         }
 
         public static function sessionValidate(){
-            $user = new user();
+                        $user = new User();
             session_start();
             if( isset( $_SESSION['sv']) && $_SESSION['sv'] == true){
                 $datos = $_SESSION;

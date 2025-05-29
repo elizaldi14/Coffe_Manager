@@ -8,8 +8,8 @@ Sistema de gestión para una cafetería que permite administrar productos, categ
 ### Requisitos Previos
 - PHP 7.4 o superior
 - MySQL 5.7 o superior
-- Servidor web (Apache/Nginx)
-- Composer (para gestión de dependencias)
+- Servidor web (Apache)
+
 
 ### Instalación
 
@@ -23,26 +23,16 @@ Sistema de gestión para una cafetería que permite administrar productos, categ
    - Crear una base de datos MySQL
    - Importar la estructura inicial:
      ```bash
-     mysql -u [usuario] -p [nombre_base_datos] < database.sql
+     Importa la base de datos phpmyadmin coffeManage.sql
      ```
    - Configurar las credenciales en `app/config.php`
 
-3. **Configurar el servidor web**
-   - Configurar el directorio público como raíz del servidor web (`/public`)
-   - Asegurarse de que el archivo `public/.htaccess` esté correctamente configurado para Apache
-
-4. **Permisos**
-   Asegúrate de que los directorios necesarios tengan permisos de escritura:
-   ```bash
-   chmod -R 755 app/storage
-   ```
-
 ### Ejecución
 
-1. Inicia tu servidor web y base de datos
+1. Inicia los servicios de Apache y MySQL
 2. Accede a la aplicación a través de tu navegador:
    ```
-   http://localhost/coffeManage/public
+   127.0.0.6
    ```
 
 ## 3. Estructura de Archivos
@@ -61,6 +51,8 @@ coffeManage/
 │   │   └── index.php        # Punto de entrada
 │   ├── resources/            # Vistas y recursos
 │   │   └── views/           # Plantillas de vistas
+│   │   └── layouts/         # Plantillas de layout
+│   │   └── functions/       # Funciones
 │   └── helpers/             # Funciones de ayuda
 ├── .htaccess                # Configuración de Apache
 └── README.md                # Este archivo
@@ -70,7 +62,4 @@ coffeManage/
 - Gestión de productos
 - Administración de categorías
 - Control de inventario
-- Interfaz intuitiva y responsiva
 
-## Soporte
-Para soporte técnico, por favor contacte al equipo de desarrollo o abra un issue en el repositorio del proyecto.

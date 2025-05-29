@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1
--- Tiempo de generación: 22-05-2025 a las 04:11:36
+-- Tiempo de generación: 29-05-2025 a las 03:11:47
 -- Versión del servidor: 10.4.32-MariaDB
 -- Versión de PHP: 8.2.12
 
@@ -51,10 +51,10 @@ CREATE TABLE `categorias` (
 --
 
 INSERT INTO `categorias` (`id_categoria`, `nombre_categoria`, `descripcion`, `activa`, `fecha_creacion`) VALUES
-(1, 'Cafés', 'Diferentes tipos de café', 1, '2025-05-21 02:51:43'),
-(2, 'Tés', 'Variedades de té e infusiones', 1, '2025-05-21 02:51:43'),
+(2, 'Cocas', 'Variedades de té e infusiones', 1, '2025-05-21 02:51:43'),
 (3, 'Bebidas Frías', 'Bebidas heladas y refrescantes', 1, '2025-05-21 02:51:43'),
-(4, 'Alimentos', 'Comida y postres', 1, '2025-05-21 02:51:43');
+(4, 'Alimentos', 'Comida y postres', 1, '2025-05-21 02:51:43'),
+(20, 'Pastel 3 leches', 'Pasteles rellenos', 1, '2025-05-22 05:04:44');
 
 -- --------------------------------------------------------
 
@@ -79,9 +79,14 @@ CREATE TABLE `productos` (
 --
 
 INSERT INTO `productos` (`id_producto`, `id_categoria`, `id_proveedor`, `nombre_producto`, `precio`, `stock`, `stock_minimo`, `activo`, `fecha_creacion`) VALUES
-(1, 1, 1, 'Café Americano', 35.00, 100, 0, 1, '2025-05-21 02:51:43'),
-(2, 1, 1, 'Capuchino', 45.00, 80, 0, 1, '2025-05-21 02:51:43'),
-(3, 2, 2, 'Té Verde', 30.00, 5, 40, 1, '2025-05-21 02:51:43');
+(12, 3, 3, 'cvxvxc', 23.00, 234, 2, 0, '2025-05-26 03:07:33'),
+(13, 20, 1, 'pepo', 56.00, 213, 2, 0, '2025-05-26 03:07:44'),
+(14, 2, 1, 'cafe', 23.00, 1, 2, 0, '2025-05-26 03:18:51'),
+(15, 2, 1, 'Té negro', 231.00, 21, 1, 0, '2025-05-26 03:19:51'),
+(16, 2, 1, 'bbnbnbn', 2151.00, 21, 12, 1, '2025-05-26 05:11:33'),
+(17, 2, 1, 'bbnbnbn', 2151.00, 21, 12, 1, '2025-05-26 05:12:54'),
+(18, 3, 1, 'vcxv', 3432.00, 234, 32, 1, '2025-05-26 05:18:41'),
+(19, 3, 2, 'xzcz', 1231.00, 23, 2, 1, '2025-05-26 05:19:03');
 
 -- --------------------------------------------------------
 
@@ -104,53 +109,8 @@ CREATE TABLE `proveedores` (
 
 INSERT INTO `proveedores` (`id_proveedor`, `nombre_empresa`, `nombre_contacto`, `telefono`, `activo`, `fecha_registro`) VALUES
 (1, 'Café de México', 'Juan Pérez', '5512345678', 1, '2025-05-21 02:51:43'),
-(2, 'Distribuidora de Tés', 'María García', '5587654321', 1, '2025-05-21 02:51:43');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `usuarios`
---
-
-CREATE TABLE `usuarios` (
-  `id_usuario` int(11) NOT NULL,
-  `nombre` varchar(100) NOT NULL,
-  `usuario` varchar(50) NOT NULL,
-  `contrasena` varchar(255) NOT NULL,
-  `telefono` varchar(20) DEFAULT NULL,
-  `email` varchar(100) DEFAULT NULL,
-  `es_admin` tinyint(1) DEFAULT 0,
-  `activo` tinyint(1) DEFAULT 1,
-  `fecha_registro` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
---
--- Volcado de datos para la tabla `usuarios`
---
-
-INSERT INTO `usuarios` (`id_usuario`, `nombre`, `usuario`, `contrasena`, `telefono`, `email`, `es_admin`, `activo`, `fecha_registro`) VALUES
-(1, 'Administrador', 'admin', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', NULL, 'admin@coffeemanager.com', 1, 1, '2025-05-21 02:51:43');
-
--- --------------------------------------------------------
-
---
--- Estructura Stand-in para la vista `vista_resumen`
--- (Véase abajo para la vista actual)
---
-CREATE TABLE `vista_resumen` (
-`total_productos` bigint(21)
-,`total_categorias` bigint(21)
-,`total_proveedores` bigint(21)
-);
-
--- --------------------------------------------------------
-
---
--- Estructura para la vista `vista_resumen`
---
-DROP TABLE IF EXISTS `vista_resumen`;
-
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `vista_resumen`  AS SELECT (select count(0) from `productos`) AS `total_productos`, (select count(0) from `categorias`) AS `total_categorias`, (select count(0) from `proveedores`) AS `total_proveedores` ;
+(2, 'Distribuidora de Tés', 'María García', '5587654321', 1, '2025-05-21 02:51:43'),
+(3, 'Cafe Express', 'Mario Albero', '3141430578', 0, '2025-05-22 05:07:40');
 
 --
 -- Índices para tablas volcadas
@@ -177,13 +137,6 @@ ALTER TABLE `proveedores`
   ADD PRIMARY KEY (`id_proveedor`);
 
 --
--- Indices de la tabla `usuarios`
---
-ALTER TABLE `usuarios`
-  ADD PRIMARY KEY (`id_usuario`),
-  ADD UNIQUE KEY `usuario` (`usuario`);
-
---
 -- AUTO_INCREMENT de las tablas volcadas
 --
 
@@ -191,25 +144,19 @@ ALTER TABLE `usuarios`
 -- AUTO_INCREMENT de la tabla `categorias`
 --
 ALTER TABLE `categorias`
-  MODIFY `id_categoria` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `id_categoria` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
 -- AUTO_INCREMENT de la tabla `productos`
 --
 ALTER TABLE `productos`
-  MODIFY `id_producto` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id_producto` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT de la tabla `proveedores`
 --
 ALTER TABLE `proveedores`
-  MODIFY `id_proveedor` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
---
--- AUTO_INCREMENT de la tabla `usuarios`
---
-ALTER TABLE `usuarios`
-  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id_proveedor` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
 -- Restricciones para tablas volcadas

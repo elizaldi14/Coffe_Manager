@@ -495,7 +495,7 @@ class ProductoModel
     public function count()
     {
         try {
-            $query = "SELECT COUNT(*) as total FROM productos";
+            $query = "SELECT COUNT(*) as total FROM productos WHERE activo = 1";
             $result = $this->db->query($query);
             
             if (!$result) {

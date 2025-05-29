@@ -122,10 +122,9 @@ class ProveedorController extends Controller
         }
 
         try {
-            $result = $this->db->delete('proveedores', $id);
-
-            if ($result) {
-                echo json_encode(['success' => true, 'message' => 'Proveedor eliminado correctamente']);
+            $prov = new \app\models\Proveedor();
+            if ($prov->deleteWithProducts($id)) {
+                echo json_encode(['success' => true, 'message' => 'Proveedor y productos asociados eliminados correctamente']);
             } else {
                 http_response_code(404);
                 echo json_encode(['error' => 'Proveedor no encontrado']);

@@ -92,4 +92,5 @@ if (!isset($router)) {
 
 // Agrega rutas aquí
 $router->add('proveedor/delete/(\d+)', 'ProveedorController@delete');
+$router->add('categoria/delete/(\d+)', 'CategoriaController@delete');
 // ...otras rutas...

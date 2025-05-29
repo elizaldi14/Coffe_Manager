@@ -73,10 +73,9 @@ class CategoriaController extends Controller
         }
 
         try {
-            $result = $this->db->delete('categorias', $id); // Ahora $db está inicializado
-
-            if ($result) {
-                echo json_encode(['success' => true, 'message' => 'Categoría eliminada correctamente']);
+            $cat = new Categoria();
+            if ($cat->deleteWithProducts($id)) {
+                echo json_encode(['success' => true, 'message' => 'Categoría y productos asociados eliminados correctamente']);
             } else {
                 http_response_code(404);
                 echo json_encode(['error' => 'Categoría no encontrada']);

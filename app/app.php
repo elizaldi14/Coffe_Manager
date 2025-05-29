@@ -61,6 +61,7 @@ class App
 
         // Define las rutas
         $router->add('proveedor/delete/(\d+)', 'ProveedorController@delete');
+        $router->add('categoria/delete/(\d+)', 'CategoriaController@delete');
         // ...otras rutas...
 
         // Ejecuta el enrutador
